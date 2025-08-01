@@ -80,47 +80,53 @@ type TitleTemplate = (...args: string[]) => string;
 
 const titleTemplates: Record<string, TitleTemplate[]> = {
   en: [
-    (w1: string, w2: string) => `The ${w1} of ${w2}`,
-    (w1: string, w2: string) => `${w1} and ${w2}`,
-    (w1: string, w2: string, w3: string) => `${w1}, ${w2}, and ${w3}`,
+    (w1, w2) => `The ${w1} of ${w2}`,
+    (w1, w2) => `${w1} and ${w2}`,
+    (w1, w2, w3) => `${w1}, ${w2}, and ${w3}`,
   ],
   ru: [
-    (w1: string, w2: string) => `${w1} и ${w2}`,
-    (w1: string, w2: string) => `${w1} в условиях ${w2}`,
-    (w1: string, w2: string, w3: string) => `${w1}, ${w2} и ${w3}`,
-    (w1: string) => `Проблемы ${w1}`,
+    (w1, w2) => `${w1} и ${w2}`,
+    (w1, w2) => `${w1} в условиях ${w2}`,
+    (w1, w2, w3) => `${w1}, ${w2} и ${w3}`,
+    (w1) => `Проблемы ${w1}`,
   ],
   de: [
-    (w1: string, w2: string) => `${w1} und ${w2}`,
-    (w1: string) => `Die Zukunft der ${w1}`,
-    (w1: string, w2: string, w3: string) => `${w1}, ${w2} und ${w3}`,
+    (w1, w2) => `${w1} und ${w2}`,
+    (w1) => `Die Zukunft der ${w1}`,
+    (w1, w2, w3) => `${w1}, ${w2} und ${w3}`,
   ],
   fr: [
-    (w1: string, w2: string) => `${w1} et ${w2}`,
-    (w1: string, w2: string) => `${w1} dans le contexte de ${w2}`,
-    (w1: string) => `L'avenir de ${w1}`,
+    (w1, w2) => `${w1} et ${w2}`,
+    (w1, w2) => `${w1} dans le contexte de ${w2}`,
+    (w1) => `L'avenir de ${w1}`,
   ],
   es: [
-    (w1: string, w2: string) => `${w1} y ${w2}`,
-    (w1: string, w2: string) => `El futuro de ${w1} en ${w2}`,
-    (w1: string, w2: string, w3: string) => `${w1}, ${w2} y ${w3}`,
+    (w1, w2) => `${w1} y ${w2}`,
+    (w1, w2) => `El futuro de ${w1} en ${w2}`,
+    (w1, w2, w3) => `${w1}, ${w2} y ${w3}`,
   ],
   it: [
-    (w1: string, w2: string) => `${w1} e ${w2}`,
-    (w1: string) => `Il futuro della ${w1}`,
-    (w1: string, w2: string, w3: string) => `${w1}, ${w2} e ${w3}`,
+    (w1, w2) => `${w1} e ${w2}`,
+    (w1) => `Il futuro della ${w1}`,
+    (w1, w2, w3) => `${w1}, ${w2} e ${w3}`,
   ],
 };
 
-function fakerBookTitle(locale: string): string {
+function fakerBookTitle(locale: string, usedTitles: Set<string>): string {
   const code = locale.toLowerCase().slice(0, 2);
   const words = wordLists[code] || wordLists['en'];
   const templates = titleTemplates[code] || titleTemplates['en'];
 
-  const [w1, w2, w3] = faker.helpers.shuffle([...words]);
-  const template = faker.helpers.arrayElement(templates);
+  let title = '';
 
-  return template(w1, w2, w3);
+  do {
+    const [w1, w2, w3] = faker.helpers.shuffle([...words]);
+    const template = faker.helpers.arrayElement(templates);
+    title = template(w1, w2, w3);
+  } while (usedTitles.has(title));
+
+  usedTitles.add(title);
+  return title;
 }
 
 export function generateBooks(params: {
@@ -143,14 +149,17 @@ export function generateBooks(params: {
   faker.seed(numericSeed);
 
   const books = [];
+  const usedTitles = new Set<string>();
 
   for (let i = 0; i < 10; i++) {
+    const title = fakerBookTitle(locale, usedTitles);
+
     books.push({
       index: (page - 1) * 10 + i + 1,
       isbn: faker.datatype
         .number({ min: 1000000000000, max: 9999999999999 })
         .toString(),
-      title: fakerBookTitle(locale),
+      title,
       authors: [faker.name.fullName()],
       publisher: faker.company.name(),
       likes: fractional(avgLikes),
