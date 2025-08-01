@@ -112,21 +112,27 @@ const titleTemplates: Record<string, TitleTemplate[]> = {
   ],
 };
 
-function fakerBookTitle(locale: string, usedTitles: Set<string>): string {
+function generateAllPossibleTitles(locale: string): string[] {
   const code = locale.toLowerCase().slice(0, 2);
   const words = wordLists[code] || wordLists['en'];
   const templates = titleTemplates[code] || titleTemplates['en'];
 
-  let title = '';
+  const titles = new Set<string>();
 
-  do {
-    const [w1, w2, w3] = faker.helpers.shuffle([...words]);
-    const template = faker.helpers.arrayElement(templates);
-    title = template(w1, w2, w3);
-  } while (usedTitles.has(title));
+  for (const template of templates) {
+    for (let i = 0; i < words.length; i++) {
+      for (let j = 0; j < words.length; j++) {
+        for (let k = 0; k < words.length; k++) {
+          try {
+            const title = template(words[i], words[j], words[k]);
+            titles.add(title);
+          } catch {}
+        }
+      }
+    }
+  }
 
-  usedTitles.add(title);
-  return title;
+  return faker.helpers.shuffle([...titles]);
 }
 
 export function generateBooks(params: {
@@ -148,12 +154,11 @@ export function generateBooks(params: {
   const numericSeed = Math.floor(seedrandom(combinedSeed)() * 1_000_000_000);
   faker.seed(numericSeed);
 
+  const allTitles = generateAllPossibleTitles(locale);
   const books = [];
-  const usedTitles = new Set<string>();
 
   for (let i = 0; i < 10; i++) {
-    const title = fakerBookTitle(locale, usedTitles);
-
+    const title = allTitles[i] || `Untitled ${i + 1}`;
     books.push({
       index: (page - 1) * 10 + i + 1,
       isbn: faker.datatype
