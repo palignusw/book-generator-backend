@@ -1,6 +1,128 @@
 import { faker } from '@faker-js/faker';
 import * as seedrandom from 'seedrandom';
 
+const wordLists: Record<string, string[]> = {
+  en: [
+    'future',
+    'education',
+    'technology',
+    'society',
+    'market',
+    'strategy',
+    'development',
+    'research',
+    'innovation',
+    'analysis',
+  ],
+  ru: [
+    'будущее',
+    'образование',
+    'инновации',
+    'рынок',
+    'стратегия',
+    'исследование',
+    'управление',
+    'влияние',
+    'технологии',
+    'развитие',
+  ],
+  de: [
+    'Zukunft',
+    'Bildung',
+    'Technologie',
+    'Gesellschaft',
+    'Markt',
+    'Strategie',
+    'Entwicklung',
+    'Forschung',
+    'Innovation',
+    'Analyse',
+  ],
+  fr: [
+    'avenir',
+    'éducation',
+    'technologie',
+    'société',
+    'marché',
+    'stratégie',
+    'développement',
+    'recherche',
+    'innovation',
+    'analyse',
+  ],
+  es: [
+    'futuro',
+    'educación',
+    'tecnología',
+    'sociedad',
+    'mercado',
+    'estrategia',
+    'desarrollo',
+    'investigación',
+    'innovación',
+    'análisis',
+  ],
+  it: [
+    'futuro',
+    'educazione',
+    'tecnologia',
+    'società',
+    'mercato',
+    'strategia',
+    'sviluppo',
+    'ricerca',
+    'innovazione',
+    'analisi',
+  ],
+};
+
+type TitleTemplate = (...args: string[]) => string;
+
+const titleTemplates: Record<string, TitleTemplate[]> = {
+  en: [
+    (w1: string, w2: string) => `The ${w1} of ${w2}`,
+    (w1: string, w2: string) => `${w1} and ${w2}`,
+    (w1: string, w2: string, w3: string) => `${w1}, ${w2}, and ${w3}`,
+  ],
+  ru: [
+    (w1: string, w2: string) => `${w1} и ${w2}`,
+    (w1: string, w2: string) => `${w1} в условиях ${w2}`,
+    (w1: string, w2: string, w3: string) => `${w1}, ${w2} и ${w3}`,
+    (w1: string) => `Проблемы ${w1}`,
+  ],
+  de: [
+    (w1: string, w2: string) => `${w1} und ${w2}`,
+    (w1: string) => `Die Zukunft der ${w1}`,
+    (w1: string, w2: string, w3: string) => `${w1}, ${w2} und ${w3}`,
+  ],
+  fr: [
+    (w1: string, w2: string) => `${w1} et ${w2}`,
+    (w1: string, w2: string) => `${w1} dans le contexte de ${w2}`,
+    (w1: string) => `L'avenir de ${w1}`,
+  ],
+  es: [
+    (w1: string, w2: string) => `${w1} y ${w2}`,
+    (w1: string, w2: string) => `El futuro de ${w1} en ${w2}`,
+    (w1: string, w2: string, w3: string) => `${w1}, ${w2} y ${w3}`,
+  ],
+  it: [
+    (w1: string, w2: string) => `${w1} e ${w2}`,
+    (w1: string) => `Il futuro della ${w1}`,
+    (w1: string, w2: string, w3: string) => `${w1}, ${w2} e ${w3}`,
+  ],
+};
+
+function fakerBookTitle(locale: string): string {
+  const code = locale.toLowerCase().slice(0, 2);
+  const words = wordLists[code] || wordLists['en'];
+  const templates = titleTemplates[code] || titleTemplates['en'];
+
+  const [w1, w2, w3] = faker.helpers.shuffle([...words]);
+  const template = faker.helpers.arrayElement(templates);
+
+  return template(w1, w2, w3);
+}
+
 export function generateBooks(params: {
   seed: string;
   page: number;
@@ -11,7 +133,7 @@ export function generateBooks(params: {
   const { seed, page, locale, avgLikes, avgReviews } = params;
 
   try {
-    faker.setLocale(locale);
+    faker.setLocale(locale.toLowerCase());
   } catch {
     faker.setLocale('en');
   }
@@ -28,7 +150,7 @@ export function generateBooks(params: {
       isbn: faker.datatype
         .number({ min: 1000000000000, max: 9999999999999 })
         .toString(),
-      title: faker.lorem.words(3),
+      title: fakerBookTitle(locale),
       authors: [faker.name.fullName()],
       publisher: faker.company.name(),
       likes: fractional(avgLikes),
