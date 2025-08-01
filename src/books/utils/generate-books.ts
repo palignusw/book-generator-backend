@@ -10,14 +10,12 @@ export function generateBooks(params: {
 }) {
   const { seed, page, locale, avgLikes, avgReviews } = params;
 
-  // Устанавливаем локаль (faker@7.6.0 поддерживает setLocale)
   try {
     faker.setLocale(locale);
   } catch {
-    faker.setLocale('en'); // fallback
+    faker.setLocale('en');
   }
 
-  // Генерируем детерминированный seed
   const combinedSeed = `${seed}_${page}`;
   const numericSeed = Math.floor(seedrandom(combinedSeed)() * 1_000_000_000);
   faker.seed(numericSeed);
